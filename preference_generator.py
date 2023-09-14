@@ -643,8 +643,6 @@ if __name__ == "__main__":
 
         print(f'For student {i}, TRUE bundle value {value_bundle_true_preferences} and NOISY bundle {value_bundle_noisy_preferences}')
    
-    set_trace()
-    
     
     
     

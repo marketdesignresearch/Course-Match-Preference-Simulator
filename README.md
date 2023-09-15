@@ -1,11 +1,10 @@
 # Course Match Preference Simulator
-A repository of the Preference Simulator component of our Machine Learning-powered Course Match paper. 
-
 This is a piece of software used for simulating students' preferences and their noisy reports in the Course Match mechanism. The structure of the students' preferences, as well as our proposed mechanism, are described the following paper:
 
-Machine Learning-powered Course Match
-Ermis Soumalias, Behnoosh Zamanlooy, Jakob Weissteiner, and Sven Seuken.
-Full paper version including appendix: [[pdf](http://arxiv.org/abs/2210.00954)]
+
+**Machine Learning-powered Course Match**<br/>
+Ermis Soumalias, Behnoosh Zamanlooy, Jakob Weissteiner, and Sven Seuken.<br/>
+Full paper version including appendix: [[pdf](http://arxiv.org/abs/2308.10226)]
 
 ## Requirements
 

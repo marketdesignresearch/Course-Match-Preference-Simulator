@@ -35,3 +35,7 @@ This simulator offers the following functionality
 
 ### 4. Determining a student's true value for any bundle. 
 
+
+## Demo 
+The jupyter notebook provides a demo of all of the above functionality. 
+

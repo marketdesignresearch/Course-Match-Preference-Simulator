@@ -13,7 +13,7 @@ Full paper version including appendix: [[pdf](http://arxiv.org/abs/2210.00954)]
 * gurobi python API
 
 
-Prepare your python environment <name_of_your_environment> (whether you do that with `conda`, `virtualenv`, etc.) and activate this environment. Then install the required packages
+Prepare your python environment <name_of_your_environment> (whether you do that with `conda`, `virtualenv`, etc.) and activate this environment. Then install the required packages.
 
 Using conda:
 ```bash

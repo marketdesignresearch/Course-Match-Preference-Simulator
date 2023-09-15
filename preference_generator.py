@@ -581,8 +581,8 @@ def calculate_single_student_demand(prices, student_profile, course_timetable, c
         The maximum nubmer of courses each student is willing to take.
 
     Returns:
-    total_demand: np.array of shape (number_of_courses, )
-        total_demand[i]: The total demand of all students for the i-th course
+    student_demand: np.array of shape (number_of_courses, )
+        sutdnet_demand[i]: 1 if the i-th course is included in the student's optimal schedule, 0 otherwise
     """
     total_demand = np.zeros(prices.shape[0])
 
@@ -614,7 +614,8 @@ def calculate_single_student_demand(prices, student_profile, course_timetable, c
                                         overload_penalty = 0, timegap_penalty= 0, free_days_marginal_values= [0, 0, 0, 0, 0], ignore_timegaps= True, verbose = False)
 
 
-    return student_demand
+    return np.array(student_demand)
+
 
 def calculate_true_bundle_value(bundle, student_preferences, timetable, make_monotone = True):
     """

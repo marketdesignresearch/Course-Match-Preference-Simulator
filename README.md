@@ -40,5 +40,5 @@ This simulator offers the following functionality
 
 
 ## Demo 
-The jupyter notebook provides a demo of all of the above functionality. 
+The jupyter notebook provided showcases all of the above functionality. 
 

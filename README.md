@@ -34,7 +34,7 @@ This simulator offers the following functionality
 
 ### 2. Generating noisy students' reports, compatible with the Course Match GUI language. For 6 and 9 popular courses, we also provide parameters such that the resulting reported preferences match the Budish and Kessler findings regarding the accuracy of the students' reports. 
 
-### 3. Determining a student's most preferred bundle subject to feasibility constraints and her budget, with respect to both her true preferences, and her reported ones. 
+### 3. Determining a student's most preferred course schedule subject to feasibility constraints and her budget, with respect to both her true preferences, and her reported ones. 
 
 ### 4. Determining a student's true value for any bundle. 
 

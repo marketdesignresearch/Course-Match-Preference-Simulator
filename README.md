@@ -4,7 +4,7 @@ This is a piece of software used for simulating students' preferences and their 
 
 **Machine Learning-powered Course Match**<br/>
 Ermis Soumalias, Behnoosh Zamanlooy, Jakob Weissteiner, and Sven Seuken.<br/>
-Full paper version including appendix: [[pdf](http://arxiv.org/abs/2308.10226)]
+Full paper version including appendix: [[pdf](http://arxiv.org/abs/2210.00954)]
 
 ## Requirements
 

@@ -1,5 +1,5 @@
-# Course-Match-Preference-Simulator
-A clean repository of the Preference Simulator component of our Machine Learning-powered Course Match paper. 
+# Course Match Preference Simulator
+A repository of the Preference Simulator component of our Machine Learning-powered Course Match paper. 
 
 Arxiv: https://arxiv.org/abs/2210.00954
 

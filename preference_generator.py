@@ -501,7 +501,7 @@ def create_noisy_model_student_list(student_list, model_type, seed, model_param_
 
 
 def calculate_total_demand(prices, student_profiles, course_timetable, credit_units = [1 for i in range(30)], return_individual_demands = False,
-                           model_type = 'True', model_param_dictionary = None, courses_per_student = 5):
+                           model_type = 'True', courses_per_student = 5):
     """
     Takes as input a price vector of courses and the students' preferences and returns the total demand for each course, and optionally the individual demand of each student
 
@@ -536,14 +536,6 @@ def calculate_total_demand(prices, student_profiles, course_timetable, credit_un
             total_demand = total_demand + np.array(student_demand)
             individual_demands.append(np.array(student_demand))
 
-    elif(model_type in ['LinearRegression', 'Ridge', 'Lasso', 'ElasticNet', 'LinearRegressionNoisy', 'RidgeNoisy', 'LassoNoisy', 'ElasticNetNoisy']):
-        for (linear_coefficients, budget) in student_profiles:
-            student_demand = solve_student(course_timetable, prices, credit_units, budget, courses_per_student, linear_coefficients, [], [], overload_penalty = 0,
-                            timegap_penalty= 0, free_days_marginal_values= [0, 0, 0, 0, 0], ignore_timegaps= True, verbose = False)
-
-            total_demand = total_demand + np.array(student_demand)
-            individual_demands.append(np.array(student_demand))
-
     elif(model_type == 'TrueLinear' or model_type == 'LinearNoisy'):
         for (linear_coefficients, budget) in student_profiles:
             student_demand = solve_student(course_timetable, prices, credit_units, budget, courses_per_student, linear_coefficients, [], [], overload_penalty = 0,
@@ -568,6 +560,61 @@ def calculate_total_demand(prices, student_profiles, course_timetable, credit_un
 
     return total_demand
 
+
+def calculate_single_student_demand(prices, student_profile, course_timetable, credit_units = [1 for i in range(30)], model_type = 'True', courses_per_student = 5, budget = None):
+    """
+    Takes as input a price vector of courses a students' preferences and optionally her budget and returns the optimal legal schedule for that student. 
+    If no budget is given: Her initial budget will be used. 
+
+    Parameters:
+    --------------------
+    prices: np.array of shape(number_of_units, )
+        prices[i]: The price of the i-th course
+    student_profile: The prefences of that student, in the form of either her true preferences or her GUI reports
+    course_timetable: list of lists of ints
+        course_timetable[i][j]: The ids of all courses being taught in the j-th timeslot of the i-th day
+    credit_units: list of floats
+        credit_units[i]: The credit units of the i-th course
+    model_type: string
+        The type of problem instance to solve. e.g. for `True' it solves the MIP of the true preferences of each student.
+    courses_per_student: int
+        The maximum nubmer of courses each student is willing to take.
+
+    Returns:
+    total_demand: np.array of shape (number_of_courses, )
+        total_demand[i]: The total demand of all students for the i-th course
+    """
+    total_demand = np.zeros(prices.shape[0])
+
+    individual_demands = []
+
+    if (model_type == 'True' or model_type == 'TrueNoisy'):
+        (additive_prefs, substitutes, complements, overload_penalty, timegap_penalty, free_days_marginal_values, initial_budget) = student_profile
+        if budget is None:
+            budget = initial_budget
+
+        student_demand = solve_student(course_timetable, prices, credit_units, budget, courses_per_student, additive_prefs, complements, substitutes, overload_penalty = overload_penalty,
+                        timegap_penalty= timegap_penalty, free_days_marginal_values= free_days_marginal_values, ignore_timegaps= True, verbose = False)
+
+    elif(model_type == 'TrueLinear' or model_type == 'LinearNoisy'):
+        (linear_coefficients, initial_budget) = student_profile
+        if budget is None:
+            budget = initial_budget
+
+        student_demand = solve_student(course_timetable, prices, credit_units, budget, courses_per_student, linear_coefficients, [], [], overload_penalty = 0,
+                        timegap_penalty= 0, free_days_marginal_values= [0, 0, 0, 0, 0], ignore_timegaps= True, verbose = False)
+
+
+    elif(model_type == 'PairwiseAdjustments' or model_type == 'PairwiseAdjustmentsNoisy'):
+        (additive_prefs, substitutes_clipped, complements_clipped, initial_budget) =  student_profile
+        if budget is None:
+            budget = initial_budget
+
+        student_demand = solve_student(course_timetable, prices, credit_units, budget, courses_per_student, additive_prefs, complements_clipped, substitutes_clipped,
+                                        overload_penalty = 0, timegap_penalty= 0, free_days_marginal_values= [0, 0, 0, 0, 0], ignore_timegaps= True, verbose = False)
+
+
+    return student_demand
 
 def calculate_true_bundle_value(bundle, student_preferences, timetable, make_monotone = True):
     """

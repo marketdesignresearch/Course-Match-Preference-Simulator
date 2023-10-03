@@ -9,8 +9,8 @@ from pdb import set_trace
 
 def create_multiple_students(number_of_students = 100, number_of_courses = 30,  number_of_popular = 8, mean_number_of_favourites = 4.87, number_of_centers = 2, gr_height = 5, gr_width = 6, seed = 42,
                             base_budget = 1, complement_range = 1, substitute_range = 1, complements_expected_value = 0.4,
-                            substitutes_expected_value = 0.4, favourites_value_range = (80, 120), non_favourites_value_range = (40, 60), complements_decay = 0.8, substitutes_decay = 0.8,
-                            disable_time_prefs = True, fixed_comp_values = True):
+                             substitutes_expected_value = 0.4, favourites_value_range = (80, 120), non_favourites_value_range = (40, 60), complements_decay = 0.8, substitutes_decay = 0.8,
+                             disable_time_prefs = True, fixed_comp_values = True, maximum_budget_deviation_beta = 0.01):
     """
     A function generating a complete student list for a run of Course Match, including the student preferences and their budgets.
 
@@ -62,8 +62,7 @@ def create_multiple_students(number_of_students = 100, number_of_courses = 30,  
     course_buckets = courses(n_types = 1, n_courses= number_of_courses,
                 n_A_pop = number_of_popular, n_A_npop = number_of_courses - number_of_popular, seed = seed)  # create the course buckets (same for all students)
     grid = make_grid(n_courses = number_of_courses, height = gr_height, width = gr_width, seed = seed)   # create the course grid (same for all students)
-    beta = min(1 / (5-1), 1 / number_of_students)
-    budget_step = beta / number_of_students
+    budget_step = maximum_budget_deviation_beta / number_of_students
 
     student_list = []
     for i in range(number_of_students):
@@ -80,7 +79,7 @@ def create_multiple_students(number_of_students = 100, number_of_courses = 30,  
                         seed = seed + i, disable_time_prefs= disable_time_prefs, favourites_value_range= favourites_value_range, center_numbers= [number_of_centers], center_number_probabilities= [1],
                         non_favourites_value_range = non_favourites_value_range, complements_decay= complements_decay, substitutes_decay= substitutes_decay, fixed_comp_values= fixed_comp_values)
 
-        budget = 1 + i * budget_step
+        budget = base_budget + i * budget_step
 
         student_list.append((additive_prefs, substitutes, complements, overload_penalty, timegap_penalty, free_days_marginal_values, budget))
 
@@ -175,7 +174,7 @@ def timetable_generator(n_courses = 30, days = 5, timeslots = 12, timeslot_proba
 
 def generate_problem_instance_principled(number_of_times = 10, number_of_courses = 30, number_of_students = 100, supply_ratio = 1.25, capacity_deviation = 0, grid_heigth = 5, grid_width = 6, complement_range = 1, substitute_range = 1,
         complements_expected_value = 0.4, substitutes_expected_value = 0.4, complements_decay = 0.8, substitutes_decay = 0.8, favourites_value_range = (80, 120), non_favourites_value_range = (40, 60),
-        number_of_popular = 8, mean_number_of_favourites = 2, number_of_centers = 2, disable_time_prefs = True, fixed_comp_values = True, seed = 42):
+        number_of_popular = 8, mean_number_of_favourites = 2, number_of_centers = 2, disable_time_prefs = True, fixed_comp_values = True, maximum_budget_deviation_beta = 0.01, seed = 42):
     """
     Generates true student profiles for the number of runs specified so that they can then be fed in the different individual stages of course match.
     """
@@ -191,7 +190,7 @@ def generate_problem_instance_principled(number_of_times = 10, number_of_courses
             complement_range= complement_range, substitute_range= substitute_range, complements_expected_value = complements_expected_value, substitutes_expected_value = substitutes_expected_value,
             seed = seed + (i * number_of_students), favourites_value_range= favourites_value_range, non_favourites_value_range= non_favourites_value_range,
             number_of_popular= number_of_popular, mean_number_of_favourites = mean_number_of_favourites, number_of_centers = number_of_centers,
-            disable_time_prefs = disable_time_prefs, fixed_comp_values= fixed_comp_values)
+            disable_time_prefs = disable_time_prefs, fixed_comp_values= fixed_comp_values, maximum_budget_deviation_beta= maximum_budget_deviation_beta)
         capacities = capacities_generator(number_of_courses = number_of_courses, total_number_of_seats= number_of_students * 5 * supply_ratio, capacity_deviation= capacity_deviation, seed = seed + i)
         timetable = timetable_generator(number_of_courses, credit_units= [0.5 for i in range(int(math.floor(number_of_courses / 2)))] + [1 for i in range(int(math.ceil(number_of_courses / 2)))], seed = seed + i)
 
@@ -203,7 +202,7 @@ def generate_problem_instance_principled(number_of_times = 10, number_of_courses
 
 
 def create_all_instances(number_of_instances = 100, number_of_courses = 25, supply_ratio = 1.25, number_of_popular = 9, mean_number_of_favourites = 4.87, seed = 8267, large_grid = True, 
-                         save_results = False, save_folder = 'problem_instances_final'):
+                         maximum_budget_deviation_beta = 0.04, additive_preferences = False, save_results = False, save_folder = 'problem_instances_final'):
     """
     A  top-level function that creates and saves instances of the true student preferences according to the parameters specified in the paper.
 
@@ -223,6 +222,10 @@ def create_all_instances(number_of_instances = 100, number_of_courses = 25, supp
         The seed to be used for the random number generator.
     large_grid: bool
         Affects the size of the grid determinign complementarities and substitutabilities, as described in section 5 of our paper. A smaller grid will result in students having more complementarities and substitutabilities.
+    maximum_budget_deviation_beta: float
+        The maximum budget deviation beta between the lowest and highest budget of a student. 
+    additive_preferences: bool
+        If true, the students' preferences will be additive. If false, the students will have complements/substitutes
     save_results: bool
         Whether to save the results to a file or not. 
     save_folder: str
@@ -247,6 +250,13 @@ def create_all_instances(number_of_instances = 100, number_of_courses = 25, supp
     else: 
         grid_h = 5
         grid_w = 6
+
+    if additive_preferences:
+        complement_range = 0
+        substitute_range = 0
+    else:
+        complement_range = 1
+        substitute_range = 1
         
     true_student_lists_all_instances, capacities_all_instances, timetables_all_instances = generate_problem_instance_principled(number_of_times= number_of_instances,
         number_of_courses= number_of_courses,
@@ -255,8 +265,8 @@ def create_all_instances(number_of_instances = 100, number_of_courses = 25, supp
         capacity_deviation=0,
         grid_heigth=grid_h,           
         grid_width=grid_w,     
-        complement_range=1,
-        substitute_range=1,
+        complement_range=complement_range,
+        substitute_range=substitute_range,
         complements_expected_value=0.4,
         substitutes_expected_value=0.4,
         complements_decay=0.8,
@@ -268,13 +278,14 @@ def create_all_instances(number_of_instances = 100, number_of_courses = 25, supp
         number_of_centers=2,                   
         disable_time_prefs=True,
         fixed_comp_values=True,
+        maximum_budget_deviation_beta= maximum_budget_deviation_beta,
         seed= seed)
 
 
     if save_results:
-        save_obj(true_student_lists_all_instances, f'./{save_folder}/true_student_lists_sr_{supply_ratio}_popular_{number_of_popular}_lg_{large_grid}')
-        save_obj(timetables_all_instances, f'./{save_folder}/timetables_sr_{supply_ratio}_popular_{number_of_popular}_lg_{large_grid}')
-        np.save(f'./{save_folder}/capacities_all_runs_sr_{supply_ratio}_popular_{number_of_popular}_lg_{large_grid}', capacities_all_instances, allow_pickle= False)
+        save_obj(true_student_lists_all_instances, f'./{save_folder}/true_student_lists_sr_{supply_ratio}_popular_{number_of_popular}_lg_{large_grid}_additive_preferences_{additive_preferences}')
+        save_obj(timetables_all_instances, f'./{save_folder}/timetables_sr_{supply_ratio}_popular_{number_of_popular}_lg_{large_grid}_additive_preferences_{additive_preferences}')
+        np.save(f'./{save_folder}/capacities_all_runs_sr_{supply_ratio}_popular_{number_of_popular}_lg_{large_grid}_additive_preferences_{additive_preferences}', capacities_all_instances, allow_pickle= False)
     
     return true_student_lists_all_instances, capacities_all_instances, timetables_all_instances
 
@@ -500,68 +511,7 @@ def create_noisy_model_student_list(student_list, model_type, seed, model_param_
     raise ValueError(f'Unknown model type: {model_type}')
 
 
-def calculate_total_demand(prices, student_profiles, course_timetable, credit_units = [1 for i in range(30)], return_individual_demands = False,
-                           model_type = 'True', courses_per_student = 5):
-    """
-    Takes as input a price vector of courses and the students' preferences and returns the total demand for each course, and optionally the individual demand of each student
-
-    Parameters:
-    --------------------
-    prices: np.array of shape(number_of_units, )
-        prices[i]: The price of the i-th course
-    student_profiles: list of tuples of the form (additive_prefs, substitutes, complements, overload_penalty, timegap_penalty, free_days_marginal_values, budget)
-        student_profile[i]: Those numbers for the i-th student
-    course_timetable: list of lists of ints
-        course_timetable[i][j]: The ids of all courses being taught in the j-th timeslot of the i-th day
-    credit_units: list of floats
-        credit_units[i]: The credit units of the i-th course
-    model_type: string
-        The type of problem instance to solve. e.g. for `True' it solves the MIP of the true preferences of each student.
-    courses_per_student: int
-        The maximum nubmer of courses each student is willing to take.
-
-    Returns:
-    total_demand: np.array of shape (number_of_courses, )
-        total_demand[i]: The total demand of all students for the i-th course
-    """
-    total_demand = np.zeros(prices.shape[0])
-
-    individual_demands = []
-
-    if (model_type == 'True' or model_type == 'TrueNoisy'):
-        for (additive_prefs, substitutes, complements, overload_penalty, timegap_penalty, free_days_marginal_values, budget) in student_profiles:
-            student_demand = solve_student(course_timetable, prices, credit_units, budget, courses_per_student, additive_prefs, complements, substitutes, overload_penalty = overload_penalty,
-                            timegap_penalty= timegap_penalty, free_days_marginal_values= free_days_marginal_values, ignore_timegaps= True, verbose = False)
-
-            total_demand = total_demand + np.array(student_demand)
-            individual_demands.append(np.array(student_demand))
-
-    elif(model_type == 'TrueLinear' or model_type == 'LinearNoisy'):
-        for (linear_coefficients, budget) in student_profiles:
-            student_demand = solve_student(course_timetable, prices, credit_units, budget, courses_per_student, linear_coefficients, [], [], overload_penalty = 0,
-                            timegap_penalty= 0, free_days_marginal_values= [0, 0, 0, 0, 0], ignore_timegaps= True, verbose = False)
-
-            total_demand = total_demand + np.array(student_demand)
-            individual_demands.append(np.array(student_demand))
-
-    elif(model_type == 'PairwiseAdjustments' or model_type == 'PairwiseAdjustmentsNoisy'):
-        for (additive_prefs, substitutes_clipped, complements_clipped, budget) in student_profiles:
-            student_demand = solve_student(course_timetable, prices, credit_units, budget, courses_per_student, additive_prefs, complements_clipped, substitutes_clipped,
-                                           overload_penalty = 0, timegap_penalty= 0, free_days_marginal_values= [0, 0, 0, 0, 0], ignore_timegaps= True, verbose = False)
-
-            total_demand = total_demand + np.array(student_demand)
-            individual_demands.append(np.array(student_demand))
-
-    else:
-        raise ValueError(f'Unknown model type: {model_type}')
-
-    if(return_individual_demands):
-        return (total_demand, np.array(individual_demands))
-
-    return total_demand
-
-
-def calculate_single_student_demand(prices, student_profile, course_timetable, credit_units = [1 for i in range(30)], model_type = 'True', courses_per_student = 5, budget = None):
+def calculate_single_student_demand(prices, student_profile, course_timetable, credit_units = [1 for i in range(25)], model_type = 'True', credit_units_per_student = 5, budget = None):
     """
     Takes as input a price vector of courses a students' preferences and optionally her budget and returns the optimal legal schedule for that student. 
     If no budget is given: Her initial budget will be used. 
@@ -593,7 +543,7 @@ def calculate_single_student_demand(prices, student_profile, course_timetable, c
         if budget is None:
             budget = initial_budget
 
-        student_demand = solve_student(course_timetable, prices, credit_units, budget, courses_per_student, additive_prefs, complements, substitutes, overload_penalty = overload_penalty,
+        student_demand = solve_student(course_timetable, prices, credit_units, budget, credit_units_per_student, additive_prefs, complements, substitutes, overload_penalty = overload_penalty,
                         timegap_penalty= timegap_penalty, free_days_marginal_values= free_days_marginal_values, ignore_timegaps= True, verbose = False)
 
     elif(model_type == 'TrueLinear' or model_type == 'LinearNoisy'):
@@ -601,7 +551,7 @@ def calculate_single_student_demand(prices, student_profile, course_timetable, c
         if budget is None:
             budget = initial_budget
 
-        student_demand = solve_student(course_timetable, prices, credit_units, budget, courses_per_student, linear_coefficients, [], [], overload_penalty = 0,
+        student_demand = solve_student(course_timetable, prices, credit_units, budget, credit_units_per_student, linear_coefficients, [], [], overload_penalty = 0,
                         timegap_penalty= 0, free_days_marginal_values= [0, 0, 0, 0, 0], ignore_timegaps= True, verbose = False)
 
 
@@ -610,11 +560,71 @@ def calculate_single_student_demand(prices, student_profile, course_timetable, c
         if budget is None:
             budget = initial_budget
 
-        student_demand = solve_student(course_timetable, prices, credit_units, budget, courses_per_student, additive_prefs, complements_clipped, substitutes_clipped,
+        student_demand = solve_student(course_timetable, prices, credit_units, budget, credit_units_per_student, additive_prefs, complements_clipped, substitutes_clipped,
                                         overload_penalty = 0, timegap_penalty= 0, free_days_marginal_values= [0, 0, 0, 0, 0], ignore_timegaps= True, verbose = False)
 
 
     return np.array(student_demand)
+
+def calculate_total_demand(prices, student_profiles, course_timetable, credit_units = [1 for i in range(30)], return_individual_demands = False,
+                           model_type = 'True', model_param_dictionary = None, credit_units_per_student = 5):
+    """
+    Takes as input a price vector of courses and the students' preferences and returns the total demand for each course, and optionally the individual demand of each student
+
+    Parameters:
+    --------------------
+    prices: np.array of shape(number_of_units, )
+        prices[i]: The price of the i-th course
+    student_profiles: list of tuples of the form (additive_prefs, substitutes, complements, overload_penalty, timegap_penalty, free_days_marginal_values, budget)
+        student_profile[i]: Those numbers for the i-th student
+    course_timetable: list of lists of ints
+        course_timetable[i][j]: The ids of all courses being taught in the j-th timeslot of the i-th day
+    credit_units: list of floats
+        credit_units[i]: The credit units of the i-th course
+    model_type: string
+        The type of problem instance to solve. e.g. for `True' it solves the MIP of the true preferences of each student.
+    courses_per_student: int
+        The maximum nubmer of courses each student is willing to take.
+
+    Returns:
+    total_demand: np.array of shape (number_of_courses, )
+        total_demand[i]: The total demand of all students for the i-th course
+    """
+    total_demand = np.zeros(prices.shape[0])
+
+    individual_demands = []
+
+    if (model_type == 'True' or model_type == 'TrueNoisy'):
+        for (additive_prefs, substitutes, complements, overload_penalty, timegap_penalty, free_days_marginal_values, budget) in student_profiles:
+            student_demand = solve_student(course_timetable, prices, credit_units, budget, credit_units_per_student, additive_prefs, complements, substitutes, overload_penalty = overload_penalty,
+                            timegap_penalty= timegap_penalty, free_days_marginal_values= free_days_marginal_values, ignore_timegaps= True, verbose = False)
+
+            total_demand = total_demand + np.array(student_demand)
+            individual_demands.append(np.array(student_demand))
+
+    elif(model_type == 'TrueLinear' or model_type == 'LinearNoisy'):
+        for (linear_coefficients, budget) in student_profiles:
+            student_demand = solve_student(course_timetable, prices, credit_units, budget, credit_units_per_student, linear_coefficients, [], [], overload_penalty = 0,
+                            timegap_penalty= 0, free_days_marginal_values= [0, 0, 0, 0, 0], ignore_timegaps= True, verbose = False)
+
+            total_demand = total_demand + np.array(student_demand)
+            individual_demands.append(np.array(student_demand))
+
+    elif(model_type == 'PairwiseAdjustments' or model_type == 'PairwiseAdjustmentsNoisy'):
+        for (additive_prefs, substitutes_clipped, complements_clipped, budget) in student_profiles:
+            student_demand = solve_student(course_timetable, prices, credit_units, budget, credit_units_per_student, additive_prefs, complements_clipped, substitutes_clipped,
+                                           overload_penalty = 0, timegap_penalty= 0, free_days_marginal_values= [0, 0, 0, 0, 0], ignore_timegaps= True, verbose = False)
+
+            total_demand = total_demand + np.array(student_demand)
+            individual_demands.append(np.array(student_demand))
+
+    else:
+        raise ValueError(f'Unknown model type: {model_type}')
+
+    if(return_individual_demands):
+        return (total_demand, np.array(individual_demands))
+
+    return total_demand
 
 
 def calculate_true_bundle_value(bundle, student_preferences, timetable, make_monotone = True):
@@ -669,28 +679,6 @@ def calculate_true_bundle_value(bundle, student_preferences, timetable, make_mon
             max_subset_value = max(max_subset_value, subset_value)
         return max_subset_value
 
-
-if __name__ == "__main__": 
-    true_student_lists_all_instances, capacities_all_instances, timetables_all_instances = create_all_instances(number_of_instances = 10)
-    noisy_student_list = create_noisy_model_student_list(student_list = true_student_lists_all_instances[2], model_type = 'PairwiseAdjustmentsNoisy', 
-                                                    seed = 1213, model_param_dictionary = {'noisy_forget_base': 0.5, 'noisy_forget_adjustments': 0.48, 'noisy_base_std': 23, 'noisy_adj_std': 0.2})
-    
-
-    
-    total_demand, individual_demands = calculate_total_demand(prices = np.array([0.2 for _ in range(25)]), student_profiles = noisy_student_list, course_timetable = [[] for  _ in range(5)],
-                            credit_units = np.array([1 for _ in range(25)]), model_type = 'PairwiseAdjustmentsNoisy', courses_per_student = 5, return_individual_demands = True)
-    
-
-    total_demand_true, individual_demands_true = calculate_total_demand(prices = np.array([0.2 for _ in range(25)]), student_profiles = true_student_lists_all_instances[2], course_timetable = [[] for  _ in range(5)],
-                            credit_units = np.array([1 for _ in range(25)]), model_type = 'True', courses_per_student = 5, return_individual_demands = True)
-    
-
-    for i in range(len(individual_demands)): 
-        value_bundle_noisy_preferences = calculate_true_bundle_value(bundle = individual_demands[i], student_preferences = true_student_lists_all_instances[2][i], timetable = [[] for  _ in range(5)], make_monotone = True)
-        value_bundle_true_preferences = calculate_true_bundle_value(bundle = individual_demands_true[i], student_preferences = true_student_lists_all_instances[2][i], timetable = [[] for  _ in range(5)], make_monotone = True)
-
-        print(f'For student {i}, TRUE bundle value {value_bundle_true_preferences} and NOISY bundle {value_bundle_noisy_preferences}')
-   
     
     
     
